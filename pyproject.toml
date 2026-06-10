@@ -1,0 +1,20 @@
+[project]
+name = "notebook-mcp-server"
+version = "0.1.0"
+description = "Simple MCP server for notebooks and notes with tags and FTS5 full-text search"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["mcp>=1.9"]
+
+[project.urls]
+Repository = "https://github.com/lucidbard/notebook-mcp-server"
+
+[project.scripts]
+notebook-mcp = "notebook_server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+only-include = ["notebook_server.py"]

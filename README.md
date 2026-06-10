@@ -1,9 +1,9 @@
 # Notebook MCP Server
 
 A simple [Model Context Protocol](https://modelcontextprotocol.io) server for
-creating notebooks and notes with tags and full-text search. Notes are stored in
-a single SQLite database (`notebook.db`, created automatically next to the
-script) with an FTS5 index for search — no external services required.
+creating notebooks and notes with tags and full-text search. Notes are stored
+in a single SQLite database with an FTS5 index for search — no external
+services required.
 
 ## Tools
 
@@ -19,46 +19,32 @@ Errors (duplicate notebook, missing note, invalid arguments) are raised as
 exceptions, so MCP clients receive them as proper tool errors (`isError`), not
 as text that looks like a successful result.
 
-## Getting started
+## Quick start (no clone needed)
 
-### 1. Prerequisites
+The only prerequisite is [`uv`](https://docs.astral.sh/uv/getting-started/installation/).
+The commands below are copy-pasteable as-is — no paths to edit.
 
-- Python 3.10+
-- [`uv`](https://docs.astral.sh/uv/) or `pip`
-
-### 2. Install
+**Claude Code:**
 
 ```sh
-git clone https://github.com/lucidbard/notebook-mcp-server.git
-cd notebook-mcp-server
-pip install -r requirements.txt
-```
-
-### 3. Connect a client
-
-**Claude Code** (CLI):
-
-```sh
-claude mcp add notebook -- python /path/to/notebook-mcp-server/notebook_server.py
+claude mcp add notebook -- uvx --from git+https://github.com/lucidbard/notebook-mcp-server notebook-mcp
 ```
 
 **Claude Desktop** — add to `claude_desktop_config.json`
-(Settings → Developer → Edit Config):
+(Settings → Developer → Edit Config), then restart the app:
 
 ```json
 {
   "mcpServers": {
     "notebook": {
-      "command": "python",
-      "args": ["/path/to/notebook-mcp-server/notebook_server.py"]
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/lucidbard/notebook-mcp-server", "notebook-mcp"]
     }
   }
 }
 ```
 
-On Windows, use a full path like `C:\\path\\to\\notebook-mcp-server\\notebook_server.py`.
-
-### 4. Try it
+### Try it
 
 Ask your client something like:
 
@@ -69,22 +55,41 @@ Then later:
 
 > Search my notes for anything about autocomplete.
 
-The model will call `create_notebook`, `create_note`, and `search_notes` for
-you. All data lives in `notebook.db` next to the server script — back it up or
-delete it to start fresh.
+The model will call `create_notebook`, `create_note`, and `search_notes` for you.
 
-### Run the server manually
+## Where your notes live
+
+All data is one SQLite file at `~/.notebook-mcp/notebook.db` (created on first
+run). Back up that file to back up your notes; delete it to start fresh. Set
+the `NOTEBOOK_DB` environment variable to use a different location — handy for
+keeping separate databases per project.
+
+## Installing from a clone
+
+If you'd rather not run from GitHub directly (Python 3.10+ required):
 
 ```sh
-python notebook_server.py   # speaks MCP over stdio
+git clone https://github.com/lucidbard/notebook-mcp-server.git
+cd notebook-mcp-server
+pip install .
+claude mcp add notebook -- notebook-mcp
 ```
 
-### Run the tests
+`pip install .` puts a `notebook-mcp` command on your PATH, so the client
+config never needs a file path. (If you do point a client at the script
+directly, use the **absolute** path to `notebook_server.py` — placeholder
+paths like `/path/to/...` fail to connect, and Git Bash silently rewrites
+them into `C:/Program Files/Git/...` on Windows.)
+
+## Development
 
 ```sh
-python test_fixes.py   # exercises tools, error paths, and search edge cases
-python stdio_test.py   # end-to-end check over MCP stdio transport
+pip install -r requirements.txt
+python notebook_server.py                    # run the server (MCP over stdio)
+python test_fixes.py                         # tool, error-path, and search tests
+python stdio_test.py                         # end-to-end test over MCP stdio
+python stdio_test.py uvx --from . notebook-mcp   # same, against the packaged install
 ```
 
-Both print `ok:`/`True` lines and exit silently on success; `test_fixes.py`
-removes its test database when done.
+Both test scripts use a throwaway temporary database — they never touch
+`~/.notebook-mcp/notebook.db`.

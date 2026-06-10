@@ -1,13 +1,15 @@
 """MCP server for managing notebooks and notes with tags and full-text search.
 
-Storage is a single SQLite database (notebook.db next to this file) using an
-FTS5 index over note titles, content, and tags for the search tool.
+Storage is a single SQLite database using an FTS5 index over note titles,
+content, and tags for the search tool. The database lives at $NOTEBOOK_DB if
+set, otherwise ~/.notebook-mcp/notebook.db.
 
 Run directly (stdio transport):
     python notebook_server.py
 """
 
 import json
+import os
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -15,7 +17,9 @@ from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
-DB_PATH = Path(__file__).parent / "notebook.db"
+DB_PATH = Path(
+    os.environ.get("NOTEBOOK_DB") or Path.home() / ".notebook-mcp" / "notebook.db"
+)
 
 mcp = FastMCP("notebook")
 
@@ -33,6 +37,7 @@ def get_db():
 
 
 def init_db() -> None:
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     with get_db() as conn:
         conn.executescript(
             """
@@ -272,5 +277,10 @@ def search_notes(
 
 init_db()
 
-if __name__ == "__main__":
+
+def main() -> None:
     mcp.run()
+
+
+if __name__ == "__main__":
+    main()

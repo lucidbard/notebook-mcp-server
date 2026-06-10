@@ -1,11 +1,22 @@
 import asyncio
+import os
+import sys
+import tempfile
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 
 async def main():
-    params = StdioServerParameters(command="python", args=["notebook_server.py"])
+    # Spawn the server against a throwaway database. Pass a server command as
+    # argv (e.g. `python stdio_test.py uvx --from . notebook-mcp`) to test a
+    # packaged install instead of the local script.
+    command, *args = sys.argv[1:] or ["python", "notebook_server.py"]
+    params = StdioServerParameters(
+        command=command,
+        args=args,
+        env={**os.environ, "NOTEBOOK_DB": os.path.join(tempfile.mkdtemp(), "test.db")},
+    )
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()

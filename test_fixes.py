@@ -1,5 +1,9 @@
 import json
 import os
+import tempfile
+
+# Point the server at a throwaway database before it is imported.
+os.environ["NOTEBOOK_DB"] = os.path.join(tempfile.mkdtemp(), "test-notebook.db")
 
 import notebook_server as ns
 
